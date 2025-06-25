@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Global Weather Forecast</title>
+</head>
+<body>
+  <h1>Global Weather Forecast</h1>
+  <input type="text" id="cityInput" placeholder="Enter city or coordinates (e.g. London or 27.7,85.3)">
+  <button onclick="fetchWeather()">Get Forecast</button>
+  <div id="weatherResult"></div>
+
+  <script>
+    const API_KEY = "57ea8d2ed0e54311b1970742252506"; // Replace with your real API key
+
+    async function fetchWeather() {
+      const city = document.getElementById("cityInput").value || "Kathmandu";
+      const url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${city}&days=4&aqi=yes&alerts=yes`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Failed to fetch weather");
+        
+        const data = await response.json();
+        displayWeather(data);
+      } catch (err) {
+        document.getElementById("weatherResult").innerText = err.message;
+      }
+    }
+
+    function displayWeather(data) {
+      const forecast = data.forecast.forecastday;
+      const current = data.current;
+      const alerts = data.alerts.alert;
+      let html = `
+        <h2>Forecast for ${data.location.name}, ${data.location.country}</h2>
+        <p><strong>Current Temperature:</strong> ${current.temp_c}°C</p>
+        <p><strong>Condition:</strong> ${current.condition.text}</p>
+        <p><strong>Air Quality (PM2.5):</strong> ${current.air_quality.pm2_5.toFixed(2)}</p>
+      `;
+
+      forecast.slice(1).forEach(day => {
+        html += `
+          <div>
+            <h3>${day.date}</h3>
+            <p>Condition: ${day.day.condition.text}</p>
+            <p>Max Temp: ${day.day.maxtemp_c}°C</p>
+            <p>Min Temp: ${day.day.mintemp_c}°C</p>
+            <img src="${day.day.condition.icon}" alt="weather icon" />
+          </div>
+        `;
+      });
+
+      if (alerts.length > 0) {
+        html += `<h2>⚠️ Alerts</h2>`;
+        alerts.forEach(alert => {
+          html += `
+            <div style="color:red;">
+              <h3>${alert.headline}</h3>
+              <p>${alert.desc}</p>
+              <p><strong>Effective:</strong> ${alert.effective}</p>
+              <p><strong>Expires:</strong> ${alert.expires}</p>
+            </div>
+          `;
+        });
+      } else {
+        html += `<p>No alerts in this area.</p>`;
+      }
+
+      document.getElementById("weatherResult").innerHTML = html;
+    }
+  </script>
+</body>
+</html>
